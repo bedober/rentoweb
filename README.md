@@ -49,3 +49,21 @@ All protected routes require a Firebase ID token in the `Authorization: Bearer <
 GitHub Actions CI is configured in `.github/workflows/ci.yml` to install dependencies, run TypeScript checks, and attempt a production build on pushes and pull requests to `main`.
 
 **Release status:** this repository is an active implementation, not yet certified for production. The CI workflow has been added but has not yet been observed passing. Before handling real rent or deposits, implement and independently test payment reconciliation, refunds, withdrawal controls, fraud/abuse limits, audit review, tenant/lease lifecycle, and end-to-end authorization tests. Never put provider secrets in `NEXT_PUBLIC_*` variables.
+
+## Pesapal API 3.0 integration
+
+The Super Admin dashboard at `/admin/configs` contains a dedicated Pesapal panel:
+- Select **Sandbox / testing** or **Live / production**.
+- Enter the Pesapal consumer key and consumer secret. The secret is encrypted with AES-256-GCM and stored only in `app_config_private/global`.
+- Save settings, then use **Test Pesapal connection** to verify authentication.
+- Use **Register / repair IPN automatically** to register `https://YOUR_PUBLIC_HOST/api/pesapal/ipn` with Pesapal and save the returned IPN ID.
+- Wallet users can add UGX 1,000–10,000,000 using the **Add money with Pesapal** flow on `/wallet`.
+
+The API 3.0 status lookup uses GET `/api/Transactions/GetTransactionStatus?orderTrackingId=...`; order submission and IPN registration use POST. The IPN handler validates the merchant reference, tracking ID, amount and currency against the pending ledger entry before crediting the wallet, and it credits only once. Reversed payments are flagged for manual reconciliation rather than silently adjusting a customer's balance.
+
+Required server environment:
+- `NEXT_PUBLIC_APP_URL`: public HTTPS deployment URL (used for Pesapal callback and IPN URLs).
+- `CONFIG_ENCRYPTION_KEY`: 64-character hexadecimal AES-256 key.
+- Firebase Admin credentials and Firebase client settings as listed in `.env.example`.
+
+Pesapal credentials can be entered in the dashboard; do not put them in `NEXT_PUBLIC_*` environment variables. Start in sandbox, register its IPN, and verify a complete test payment before switching to live. This code has been committed but has not yet been exercised against a real Pesapal merchant account or independently verified by a passing CI build.
