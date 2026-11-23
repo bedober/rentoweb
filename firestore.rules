@@ -1,1 +1,25 @@
-rules_version = '2';service cloud.firestore {match /databases/{database}/documents {function signed(){return request.auth!=null;}function role(){return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;}function admin(){return signed()&&role()=='SUPER_ADMIN';}match /app_config/{id}{allow read:signed();allow write:admin();}match /users/{uid}{allow read:signed()&&(request.auth.uid==uid||admin());allow create:signed()&&request.auth.uid==uid;allow update:signed()&&(request.auth.uid==uid||admin());allow delete:admin();}match /wallets/{uid}{allow read:signed()&&request.auth.uid==uid;allow write:false;}match /wallet_transactions/{id}{allow read:signed()&&(resource.data.userId==request.auth.uid||admin());allow write:false;}match /properties/{id}{allow read:signed();allow create:signed()&&role()=='LANDLORD';allow update:signed()&&(resource.data.landlordId==request.auth.uid||admin());allow delete:admin();}match /rent_invoices/{id}{allow read:signed()&&(resource.data.tenantId==request.auth.uid||resource.data.landlordId==request.auth.uid||admin());allow write:false;}match /maintenance_requests/{id}{allow read:signed();allow create:signed();allow update:signed();allow delete:admin();}match /announcements/{id}{allow read:signed();allow create:signed()&&(role()=='LANDLORD'||admin());allow update:signed()&&(resource.data.authorId==request.auth.uid||admin());allow delete:admin();}match /{document=**}{allow read,write:admin();}}}
+rules_version = '2';
+service cloud.firestore {
+ match /databases/{database}/documents {
+  function signed(){return request.auth != null;}
+  function userDoc(){return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;}
+  function role(){return signed() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) ? userDoc().role : "NONE";}
+  function admin(){return role() == "SUPER_ADMIN";}
+  match /app_config/{id}{allow read:signed();allow write:admin();}
+  match /app_config_private/{id}{allow read,write:admin();}
+  match /users/{uid}{
+   allow read:signed() && (request.auth.uid==uid || admin());
+   allow create:signed() && request.auth.uid==uid && request.resource.data.role in ["TENANT","LANDLORD","CARETAKER"];
+   allow update:admin() || (signed() && request.auth.uid==uid && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["name","avatarUrl","phone","updatedAt"]));
+   allow delete:admin();
+  }
+  match /wallets/{uid}{allow read:signed() && request.auth.uid==uid;allow write:false;}
+  match /wallet_transactions/{id}{allow read:signed() && (resource.data.userId==request.auth.uid || admin());allow write:false;}
+  match /properties/{id}{allow read:signed();allow create,update,delete:admin();}
+  match /rent_invoices/{id}{allow read:signed() && (resource.data.tenantId==request.auth.uid || resource.data.landlordId==request.auth.uid || admin());allow write:false;}
+  match /maintenance_requests/{id}{allow read:signed() && (resource.data.requesterId==request.auth.uid || resource.data.landlordId==request.auth.uid || admin());allow create,update,delete:false;}
+  match /announcements/{id}{allow read:signed();allow create:signed() && (role()=="LANDLORD" || admin());allow update:signed() && (resource.data.authorId==request.auth.uid || admin());allow delete:admin();}
+  match /audit_logs/{id}{allow read:admin();allow write:false;}
+  match /{document=**}{allow read,write:admin();}
+ }
+}
