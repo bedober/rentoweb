@@ -1,0 +1,1 @@
+import type {Config} from "tailwindcss";export default {darkMode:["class"],content:["./src/**/*.{js,ts,jsx,tsx,mdx}"],theme:{extend:{colors:{rento:{green:"#0A7A42",dark:"#121212",mist:"#F5F7F5"}}}},plugins:[require("tailwindcss-animate")]} satisfies Config;

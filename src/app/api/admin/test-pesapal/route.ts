@@ -1,0 +1,1 @@
+import {NextRequest,NextResponse} from "next/server";import {requireAdmin} from "@/lib/auth";import {token} from "@/lib/pesapal";export async function POST(req:NextRequest){try{await requireAdmin(req);await token();return NextResponse.json({ok:true})}catch(e:any){return NextResponse.json({error:e.message},{status:400})}}
