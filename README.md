@@ -27,3 +27,25 @@ Import the repo, select Next.js, add .env.example values in Project Settings, se
 
 ## Implementation status
 Included: Firebase email/password and Google/Facebook sign-in UI, profile creation, server-verified admin config updates, Pesapal hosted checkout creation and IPN status verification, authenticated wallet balance/history endpoints, Firestore and Storage rules. Phone OTP + email challenge, hashed wallet PIN, KYC, payouts, FCM/SMS delivery, monthly invoice scheduler, PDF receipts, full property/lease CRUD and complete admin tables are not yet implemented. Do not use for live money movement until those controls and reconciliation are implemented and independently audited. Dashboard sample figures are illustrative, not seeded financial records.
+
+## API routes currently implemented
+
+All protected routes require a Firebase ID token in the `Authorization: Bearer <token>` header. Financial mutations are performed with Firebase Admin SDK transactions; browser clients cannot directly write wallet balances or wallet transaction records.
+
+| Route | Methods | Purpose |
+|---|---|---|
+| `/api/profile` | POST | Create a profile once; an existing account's role is not overwritten |
+| `/api/properties` | GET, POST | List visible properties and create landlord listings |
+| `/api/properties/[id]` | PATCH, DELETE | Edit, publish, draft, or archive an owned listing |
+| `/api/invoices` | GET, POST | List invoices by role and issue a rent invoice to a tenant |
+| `/api/maintenance` | GET, POST | Create maintenance requests and view requests by requester/landlord |
+| `/api/admin/users` | GET, PATCH | Super-admin user listing, role changes and account blocking |
+| `/api/wallet/pay-rent` | POST | Atomically debit tenant and credit landlord wallets for a payable invoice |
+| `/api/pesapal/create-order` | POST | Create a Pesapal checkout order server-side |
+| `/api/pesapal/ipn` | GET, POST | Verify Pesapal transaction status and credit a wallet once |
+| `/api/admin/update-config` | POST | Save public settings and encrypt provider secrets |
+| `/api/admin/test-pesapal` | POST | Test server-side Pesapal credentials |
+
+GitHub Actions CI is configured in `.github/workflows/ci.yml` to install dependencies, run TypeScript checks, and attempt a production build on pushes and pull requests to `main`.
+
+**Release status:** this repository is an active implementation, not yet certified for production. The CI workflow has been added but has not yet been observed passing. Before handling real rent or deposits, implement and independently test payment reconciliation, refunds, withdrawal controls, fraud/abuse limits, audit review, tenant/lease lifecycle, and end-to-end authorization tests. Never put provider secrets in `NEXT_PUBLIC_*` variables.
