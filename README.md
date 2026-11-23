@@ -8,7 +8,7 @@ cp .env.example .env.local
 npm install
 npm run dev
 ```
-Use Node.js 20+. Configure Firebase Web values from Project settings and Admin SDK service-account values on the server only. Never prefix secrets with NEXT_PUBLIC.
+Use Node.js 20+. Configure Firebase Web values from Project settings and Admin SDK service-account values on the server only. Never prefix secrets with NEXT_PUBLIC. Generate CONFIG_ENCRYPTION_KEY with `openssl rand -hex 32`; it encrypts credentials entered in the admin settings before they are stored in the server-only app_config_private collection. Keep this key backed up and never expose it to the browser.
 
 ## Firebase setup
 Create a Firebase project, register a Web app, enable Email/Password, Google, Facebook and Phone providers as needed, create Firestore and Storage, then deploy rules with `firebase deploy --only firestore:rules,storage`. Create a service account and set FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL and FIREBASE_PRIVATE_KEY (newlines escaped as \\n).
